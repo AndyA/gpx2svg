@@ -1,0 +1,19 @@
+2013-11-07 Tobias Leupold <tobias.leupold@web.de> (Version 0.1.2)
+
+	* Fixed crash when processing GPX files with empty or no path segments. Thanks to Fabian Seitz for the bug report!
+	
+	* Added exception handler for non-readable or non-existant files or files with no valid GPX data.
+
+2012-08-26 Tobias Leupold <tobias.leupold@web.de> (Version 0.1.1)
+
+	* Made the internal data structure simpler. Don't store the IDs of the tracks.
+	
+	* Combine path segments before doing the Mercator projection, so that rounding errors can't affect the search.
+	
+	* Made the algorithm to search for combinable paths more effective.
+	
+	* Draw circles instead of single points (that will not be shown). Added an command line option to drop such single points.
+
+2012-08-25 Tobias Leupold <tobias.leupold@web.de> (Version 0.1)
+
+	* Initial release
