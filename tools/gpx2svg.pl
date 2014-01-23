@@ -34,6 +34,13 @@ my %STYLE = (
     'stroke-width' => '2',
     'stroke'       => 'rgb(200, 0, 0)',
   },
+  track_dot => {
+    'fill-opacity' => 0,
+    'fill-opacity' => 0.5,
+    'stroke-width' => '1',
+    'fill'         => 'rgb(200, 0, 0)',
+    'stroke'       => 'rgb(0, 0, 0)',
+  },
   elevation => {
     'fill-opacity' => 0.5,
     'stroke-width' => '1',
@@ -99,13 +106,12 @@ sub make_track {
     print "Plotting ", $leg->{name}, "\n";
     my ( $xv, $yv ) = ( [], [] );
     my @pts = flatten($leg);
-    my $intro = move_along( \@pts, 1000 );
     for my $pt (@pts) {
       my ( $x, $y ) = mercate( $pt->{lat}, $pt->{lon} );
       push @$xv, $x;
       push @$yv, $y;
     }
-    push @leg, { xv => $xv, yv => $yv, intro => $intro };
+    push @leg, { xv => $xv, yv => $yv };
     grow_bbox( $bbox, $xv, $yv );
   }
 
@@ -124,28 +130,14 @@ sub make_track {
       -type => 'polyline',
     );
     $svg->polyline( %$points, style => $STYLE{track} );
-    $intro = -1 unless defined $intro;
-    for my $len ( -15, 15 ) {
-      my ( $x1, $y1, $x2, $y2 )
-       = make_tick( $xv->[0], $yv->[0], $xv->[$intro], $yv->[$intro], $len );
-      $svg->line(
-        x1    => $x1,
-        y1    => $y1,
-        x2    => $x2,
-        y2    => $y2,
-        style => $STYLE{track_tick}
-      );
-    }
+    $svg->circle(
+      cx    => $xv->[0],
+      cy    => $yv->[0],
+      r     => 8,
+      style => $STYLE{track_dot}
+    );
   }
   return $svg;
-}
-
-sub make_tick {
-  my ( $x0, $y0, $x1, $y1, $len ) = @_;
-  my $dx = $x1 - $x0;
-  my $dy = $y1 - $y0;
-  my $vl = sqrt( $dx * $dx + $dy * $dy );
-  return ( $x0, $y0, $x0 + $dy * $len / $vl, $y0 - $dx * $len / $vl );
 }
 
 sub make_profile {
@@ -206,24 +198,6 @@ sub make_profile {
 sub flatten {
   my $leg = shift;
   return map { @{ $_->{points} } } @{ $leg->{segments} };
-}
-
-# Return the index of the first point more than the specified number of
-# metres along the trail
-
-sub move_along {
-  my ( $pts, $mindist ) = @_;
-  my $dist = 0;
-  my ( $plat, $plon );
-  my $gis = GIS::Distance->new;
-  for my $i ( 0 .. $#$pts ) {
-    my $pt = $pts->[$i];
-    $dist += $gis->distance( $plat, $plon, $pt->{lat}, $pt->{lon} )->metres
-     if defined $plat;
-    return $i if $dist >= $mindist;
-    ( $plat, $plon ) = ( $pt->{lat}, $pt->{lon} );
-  }
-  return;
 }
 
 sub sequence {
