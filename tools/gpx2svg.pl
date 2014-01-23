@@ -21,6 +21,22 @@ my %O = (
   vscale  => 100,
 );
 
+# Potted styles
+
+my %STYLE = (
+  track => {
+    'fill-opacity' => 0,
+    'stroke-width' => '1',
+    'stroke'       => 'rgb(0, 0, 0)',
+  },
+  elevation => {
+    'fill-opacity' => 0.5,
+    'stroke-width' => '1',
+    'stroke'       => 'rgb(0, 0, 0)',
+    'fill'         => 'rgb(0, 100, 0)',
+  },
+);
+
 GetOptions(
   't:s'      => \$O{trkfile},
   'e:s'      => \$O{elefile},
@@ -102,14 +118,7 @@ sub make_track {
       y     => $yv,
       -type => 'polyline',
     );
-    my $tag = $svg->polyline(
-      %$points,
-      style => {
-        'fill-opacity' => 0,
-        'stroke-width' => '1',
-        'stroke'       => 'rgb(0, 0, 0)',
-      }
-    );
+    $svg->polyline( %$points, style => $STYLE{track} );
   }
   return $svg;
 }
@@ -148,6 +157,8 @@ sub make_profile {
   my $scaler = make_scaler( $width, $height, [0, 0, $dist, $maxy] );
   my $svg = SVG->new( width => $width, height => $height );
 
+  my $fill = sequence( 'rgb(0, 100, 0)', 'rgb(100, 0, 0)' );
+
   for my $leg (@leg) {
     my ( $xv, $yv ) = @$leg;
     $scaler->( $xv, $yv );
@@ -160,18 +171,21 @@ sub make_profile {
       -type   => 'polyline',
       -closed => 'true',
     );
-    my $tag = $svg->polyline(
-      %$points,
-      style => {
-        'fill-opacity' => 0.5,
-        'stroke-width' => '1',
-        'stroke'       => 'rgb(0, 0, 0)',
-        'fill'         => 'rgb(0, 100, 0)',
-      }
-    );
+    my $style = { %{ $STYLE{elevation} } };
+    $style->{fill} = $fill->();
+    $svg->polyline( %$points, style => $style );
   }
 
   return $svg;
+}
+
+sub sequence {
+  my @seq = @_;
+  return sub {
+    my $v = shift @seq;
+    push @seq, $v;
+    return $v;
+  };
 }
 
 sub bbox {
