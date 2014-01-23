@@ -44,6 +44,14 @@ def parseGpx(gpxFile):
 
   gpsData = []
 
+  for route in gpx.getElementsByTagName('rte'):
+    routeData = []
+    for point in route.getElementsByTagName('rtept'):
+      routeData.append((float(point.attributes['lon'].value), float(point.attributes['lat'].value)))
+
+    if routeData != []:
+      gpsData.append(routeData)
+
   for track in gpx.getElementsByTagName('trk'):
 
     for trackseg in track.getElementsByTagName('trkseg'):
