@@ -2,6 +2,13 @@
 
 indir="work/"
 opts="--vscale 200"
+
+find "$indir" -iname '*.tcx' | while read tcx; do
+  gpx="$( echo "$tcx" | sed -e 's/\.[^.]*$//' ).gpx"
+  [ "$gpx" -nt "$tcx" ] && continue
+  gpsbabel -i gtrnctr -f "$tcx" -o gpx -F "$gpx"
+done
+
 find "$indir" -iname '*.gpx' | xargs -L 1 dirname | sort | uniq | while read dir; do
   track="$dir/track.svg"
   elevation="$dir/elevation.svg"
