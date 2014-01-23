@@ -126,6 +126,7 @@ sub make_track {
   for my $leg (@leg) {
     my ( $xv, $yv, $intro ) = @{$leg}{ 'xv', 'yv', 'intro' };
     $scaler->( $xv, $yv );
+    simplify_vec( $O{eps}, $xv, $yv );
     my $points = $svg->get_path(
       x     => $xv,
       y     => $yv,
@@ -181,6 +182,7 @@ sub make_profile {
   for my $leg (@leg) {
     my ( $xv, $yv ) = @$leg;
     $scaler->( $xv, $yv );
+    simplify_vec( $O{eps}, $xv, $yv );
     #    for my $i ( 0 .. $#$xv ) {
     #      printf "%8.3f, %8.3f\n", $xv->[$i], $yv->[$i];
     #    }
@@ -250,6 +252,54 @@ sub load_gpx {
   my $fn = shift;
   open my $fh, '<', $fn;
   return Geo::Gpx->new( input => $fh );
+}
+
+sub seg_dist {
+  my ( $x0, $y0, $x1, $y1, $xp, $yp ) = @_;
+  my $dx = $x1 - $x0;
+  my $dy = $y1 - $y0;
+  return if $dx == 0 && $dy == 0;
+  my $dd = sqrt( $dx * $dx + $dy * $dy );
+  $dx /= $dd;
+  $dy /= $dd;
+
+  return abs( ( $xp - $x0 ) * -$dy + ( $yp - $y0 ) * $dx );
+}
+
+sub zip_points {
+  my ( $xv, $yv ) = @_;
+  return map { [$xv->[$_], $yv->[$_]] } 0 .. $#$xv;
+}
+
+sub unzip_points {
+  my ( $pt, $xv, $yv ) = @_;
+  @$xv = map { $_->[0] } @$pt;
+  @$yv = map { $_->[1] } @$pt;
+}
+
+sub simplify_vec {
+  my ( $eps, $xv, $yv ) = @_;
+  print "Simplify $#$xv points to ";
+  my @pt = simplify( $eps, zip_points( $xv, $yv ) );
+  print scalar(@pt), "\n";
+  unzip_points( \@pt, $xv, $yv );
+}
+
+sub simplify {
+  my ( $eps, @pt ) = @_;
+  my ( $max, $index );
+
+  for my $i ( 1 .. $#pt - 1 ) {
+    my $dist = seg_dist( @{ $pt[0] }, @{ $pt[-1] }, @{ $pt[$i] } );
+    ( $max, $index ) = ( $dist, $i ) unless defined $max && $max > $dist;
+  }
+
+  return @pt unless defined $max;
+  return ( $pt[0], $pt[-1] ) if $max <= $eps;
+  my @sl1 = simplify( $eps, @pt[0 .. $index] );
+  my @sl2 = simplify( $eps, @pt[$index .. $#pt] );
+  pop @sl1;    # drop common point
+  return ( @sl1, @sl2 );
 }
 
 sub syntax {
