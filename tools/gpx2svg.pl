@@ -19,6 +19,8 @@ my %O = (
   routes  => 1,
   size    => '1000x1000',
   vscale  => 100,
+  border  => 50,
+  eps     => 1,
 );
 
 # Potted styles
@@ -118,7 +120,7 @@ sub make_track {
   my $width  = $O{width};
   my $height = $O{height};
 
-  my $scaler = make_scaler( $width, $height, $bbox );
+  my $scaler = make_scaler( $width, $height, $bbox, $O{border} );
   my $svg = SVG->new( width => $width, height => $height );
 
   for my $leg (@leg) {
@@ -170,7 +172,8 @@ sub make_profile {
   my $width  = $O{width};
   my $height = $O{height};
 
-  my $scaler = make_scaler( $width, $height, [0, 0, $dist, $maxy] );
+  my $scaler
+   = make_scaler( $width, $height, [0, 0, $dist, $maxy], $O{border} );
   my $svg = SVG->new( width => $width, height => $height );
 
   my $fill = sequence( 'rgb(0, 100, 0)', 'rgb(100, 0, 0)' );
@@ -228,11 +231,12 @@ sub grow_bbox {
 }
 
 sub make_scaler {
-  my ( $ow, $oh, $bbox ) = @_;
+  my ( $ow, $oh, $bbox, $border ) = @_;
+  $border ||= 0;
   my ( $minx, $miny, $maxx, $maxy ) = @$bbox;
   my $iw     = $maxx - $minx;
   my $ih     = $maxy - $miny;
-  my $scale  = min( $ow / $iw, $oh / $ih );
+  my $scale  = min( ( $ow - $border ) / $iw, ( $oh - $border ) / $ih );
   my $xshift = ( $ow - $iw * $scale ) / 2;
   my $yshift = ( $oh - $ih * $scale ) / 2;
   return sub {
