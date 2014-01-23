@@ -21,6 +21,7 @@ my %O = (
   vscale  => 100,
   border  => 50,
   eps     => 1,
+  smooth  => 0.95,
 );
 
 # Potted styles
@@ -150,6 +151,7 @@ sub make_profile {
   my @leg  = ();
   my $dist = 0;
   my $maxy = 0;
+  my $sm   = smoother( $O{smooth} );
   for my $leg (@$pt) {
     print "Plotting ", $leg->{name}, "\n";
     my ( $plat, $plon );
@@ -160,7 +162,7 @@ sub make_profile {
       $dist += $gis->distance( $plat, $plon, $pt->{lat}, $pt->{lon} )->metres
        if defined $plat;
       push @$xv, $dist;
-      push @$yv, $pt->{ele} * $O{vscale};
+      push @$yv, $sm->( $pt->{ele} * $O{vscale} );
       $maxy = $pt->{ele} if $pt->{ele} > $maxy;
       ( $plat, $plon ) = ( $pt->{lat}, $pt->{lon} );
     }
@@ -198,6 +200,18 @@ sub make_profile {
   }
 
   return $svg;
+}
+
+sub smoother {
+  my $decay = shift;
+  my $acc   = 0;
+  my $scale = 1;
+  return sub {
+    my $sample = shift;
+    $acc   = $acc * $decay + $sample;
+    $scale = $scale * $decay + 1;
+    return $acc / $scale;
+  };
 }
 
 sub flatten {
