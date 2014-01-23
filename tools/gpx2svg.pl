@@ -55,6 +55,7 @@ my %STYLE = (
 GetOptions(
   't:s'      => \$O{trkfile},
   'e:s'      => \$O{elefile},
+  'smooth:s' => \$O{smooth},
   'vscale:i' => \$O{vscale},
 ) or syntax();
 
