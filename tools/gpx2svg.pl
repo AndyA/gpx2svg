@@ -28,7 +28,7 @@ my %O = (
 my %STYLE = (
   track => {
     'fill-opacity' => 0,
-    'stroke-width' => '1',
+    'stroke-width' => '2',
     'stroke'       => 'rgb(0, 0, 0)',
   },
   track_tick => {
