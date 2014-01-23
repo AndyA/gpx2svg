@@ -179,6 +179,29 @@ sub make_profile {
   return $svg;
 }
 
+sub flatten {
+  my $leg = shift;
+  return map { @{ $_->{points} } } @{ $leg->{segments} };
+}
+
+# Return the index of the first point more than the specified number of
+# metres along the trail
+
+sub move_along {
+  my ( $pts, $mindist ) = @_;
+  my $dist = 0;
+  my ( $plat, $plon );
+  my $gis = GIS::Distance->new;
+  for my $i ( 0 .. $#$pts ) {
+    my $pt = $pts->[$i];
+    $dist += $gis->distance( $plat, $plon, $pt->{lat}, $pt->{lon} )->metres
+     if defined $plat;
+    return $i if $dist >= $mindist;
+    ( $plat, $plon ) = ( $pt->{lat}, $pt->{lon} );
+  }
+  return;
+}
+
 sub sequence {
   my @seq = @_;
   return sub {
