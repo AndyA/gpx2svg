@@ -71,22 +71,35 @@ if ( defined( my $elefile = $O{elefile} ) ) {
 }
 
 sub make_track {
-  my $pt = shift;
-  my $svg = SVG->new( width => $O{width}, height => $O{height} );
+  my $pt   = shift;
+  my @leg  = ();
+  my $bbox = [undef, undef, undef, undef];
   for my $leg (@$pt) {
     print "Plotting ", $leg->{name}, "\n";
-    my ( @xv, @yv );
+    my ( $xv, $yv ) = ( [], [] );
     for my $seg ( @{ $leg->{segments} } ) {
       for my $pt ( @{ $seg->{points} } ) {
         my ( $x, $y ) = mercate( $pt->{lat}, $pt->{lon} );
-        push @xv, $x;
-        push @yv, $y;
+        push @$xv, $x;
+        push @$yv, $y;
       }
     }
-    scale_to_fit( $O{width}, $O{height}, \@xv, \@yv );
+    push @leg, [$xv, $yv];
+    grow_bbox( $bbox, $xv, $yv );
+  }
+
+  my $width  = $O{width};
+  my $height = $O{height};
+
+  my $scaler = make_scaler( $width, $height, $bbox );
+  my $svg = SVG->new( width => $width, height => $height );
+
+  for my $leg (@leg) {
+    my ( $xv, $yv ) = @$leg;
+    $scaler->( $xv, $yv );
     my $points = $svg->get_path(
-      x     => \@xv,
-      y     => \@yv,
+      x     => $xv,
+      y     => $yv,
       -type => 'polyline',
     );
     my $tag = $svg->polyline(
@@ -132,7 +145,7 @@ sub make_profile {
   my $width  = $O{width};
   my $height = $O{height};
 
-  my $scaler = make_scaler( $width, $height, 0, 0, $dist, $maxy );
+  my $scaler = make_scaler( $width, $height, [0, 0, $dist, $maxy] );
   my $svg = SVG->new( width => $width, height => $height );
 
   for my $leg (@leg) {
@@ -163,11 +176,25 @@ sub make_profile {
 
 sub bbox {
   my ( $xv, $yv ) = @_;
-  return ( min(@$xv), min(@$yv), max(@$xv), max(@$yv) );
+  return [min(@$xv), min(@$yv), max(@$xv), max(@$yv)];
+}
+
+sub grow_bbox {
+  my ( $bbox, $xv, $yv ) = @_;
+  my $bb2 = bbox( $xv, $yv );
+  $bbox->[0] = $bb2->[0]
+   unless defined $bbox->[0] && $bbox->[0] < $bb2->[0];
+  $bbox->[1] = $bb2->[1]
+   unless defined $bbox->[1] && $bbox->[1] < $bb2->[1];
+  $bbox->[2] = $bb2->[2]
+   unless defined $bbox->[2] && $bbox->[2] > $bb2->[2];
+  $bbox->[3] = $bb2->[3]
+   unless defined $bbox->[3] && $bbox->[3] > $bb2->[3];
 }
 
 sub make_scaler {
-  my ( $ow, $oh, $minx, $miny, $maxx, $maxy ) = @_;
+  my ( $ow, $oh, $bbox ) = @_;
+  my ( $minx, $miny, $maxx, $maxy ) = @$bbox;
   my $iw     = $maxx - $minx;
   my $ih     = $maxy - $miny;
   my $scale  = min( $ow / $iw, $oh / $ih );
@@ -178,11 +205,6 @@ sub make_scaler {
     $_ = ( $_ - $minx ) * $scale + $xshift for @$xv;
     $_ = $oh - ( ( $_ - $miny ) * $scale + $yshift ) for @$yv;
   };
-}
-
-sub scale_to_fit {
-  my ( $ow, $oh, $xv, $yv ) = @_;
-  make_scaler( $ow, $oh, bbox( $xv, $yv ) )->( $xv, $yv );
 }
 
 sub load_gpx {
