@@ -29,6 +29,11 @@ my %STYLE = (
     'stroke-width' => '1',
     'stroke'       => 'rgb(0, 0, 0)',
   },
+  track_tick => {
+    'fill-opacity' => 0,
+    'stroke-width' => '2',
+    'stroke'       => 'rgb(200, 0, 0)',
+  },
   elevation => {
     'fill-opacity' => 0.5,
     'stroke-width' => '1',
@@ -93,14 +98,14 @@ sub make_track {
   for my $leg (@$pt) {
     print "Plotting ", $leg->{name}, "\n";
     my ( $xv, $yv ) = ( [], [] );
-    for my $seg ( @{ $leg->{segments} } ) {
-      for my $pt ( @{ $seg->{points} } ) {
-        my ( $x, $y ) = mercate( $pt->{lat}, $pt->{lon} );
-        push @$xv, $x;
-        push @$yv, $y;
-      }
+    my @pts = flatten($leg);
+    my $intro = move_along( \@pts, 1000 );
+    for my $pt (@pts) {
+      my ( $x, $y ) = mercate( $pt->{lat}, $pt->{lon} );
+      push @$xv, $x;
+      push @$yv, $y;
     }
-    push @leg, [$xv, $yv];
+    push @leg, { xv => $xv, yv => $yv, intro => $intro };
     grow_bbox( $bbox, $xv, $yv );
   }
 
@@ -111,7 +116,7 @@ sub make_track {
   my $svg = SVG->new( width => $width, height => $height );
 
   for my $leg (@leg) {
-    my ( $xv, $yv ) = @$leg;
+    my ( $xv, $yv, $intro ) = @{$leg}{ 'xv', 'yv', 'intro' };
     $scaler->( $xv, $yv );
     my $points = $svg->get_path(
       x     => $xv,
@@ -119,8 +124,28 @@ sub make_track {
       -type => 'polyline',
     );
     $svg->polyline( %$points, style => $STYLE{track} );
+    $intro = -1 unless defined $intro;
+    for my $len ( -15, 15 ) {
+      my ( $x1, $y1, $x2, $y2 )
+       = make_tick( $xv->[0], $yv->[0], $xv->[$intro], $yv->[$intro], $len );
+      $svg->line(
+        x1    => $x1,
+        y1    => $y1,
+        x2    => $x2,
+        y2    => $y2,
+        style => $STYLE{track_tick}
+      );
+    }
   }
   return $svg;
+}
+
+sub make_tick {
+  my ( $x0, $y0, $x1, $y1, $len ) = @_;
+  my $dx = $x1 - $x0;
+  my $dy = $y1 - $y0;
+  my $vl = sqrt( $dx * $dx + $dy * $dy );
+  return ( $x0, $y0, $x0 + $dy * $len / $vl, $y0 - $dx * $len / $vl );
 }
 
 sub make_profile {
@@ -135,15 +160,14 @@ sub make_profile {
     my ( $plat, $plon );
     my ( $xv, $yv ) = ( [], [] );
     my $left = $dist;
-    for my $seg ( @{ $leg->{segments} } ) {
-      for my $pt ( @{ $seg->{points} } ) {
-        $dist += $gis->distance( $plat, $plon, $pt->{lat}, $pt->{lon} )->metres
-         if defined $plat;
-        push @$xv, $dist;
-        push @$yv, $pt->{ele} * $O{vscale};
-        $maxy = $pt->{ele} if $pt->{ele} > $maxy;
-        ( $plat, $plon ) = ( $pt->{lat}, $pt->{lon} );
-      }
+    my @pts  = flatten($leg);
+    for my $pt (@pts) {
+      $dist += $gis->distance( $plat, $plon, $pt->{lat}, $pt->{lon} )->metres
+       if defined $plat;
+      push @$xv, $dist;
+      push @$yv, $pt->{ele} * $O{vscale};
+      $maxy = $pt->{ele} if $pt->{ele} > $maxy;
+      ( $plat, $plon ) = ( $pt->{lat}, $pt->{lon} );
     }
     # close polygon
     push @$xv, $xv->[-1], $left;
