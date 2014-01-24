@@ -1,7 +1,7 @@
 #!/bin/bash
 
 indir="work/"
-opts="--vscale 200"
+opts="--vscale 80 --srtm /data/ref/srtm/SRTMx"
 
 find "$indir" -iname '*.tcx' | while read tcx; do
   gpx="$( echo "$tcx" | sed -e 's/\.[^.]*$//' ).gpx"
