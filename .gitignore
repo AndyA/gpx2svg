@@ -1,4 +1,8 @@
 .*.sw?
 /*.svg
+/Build
+/MYMETA.*
+/_build/
+/blib/
 /work
 Session.vim
