@@ -24,7 +24,7 @@ my %O = (
   vscale  => 100,
   border  => 50,
   eps     => 1,
-  smooth  => 0.95,
+  smooth  => 0,
 );
 
 # Potted styles
