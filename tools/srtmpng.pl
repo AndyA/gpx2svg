@@ -12,10 +12,10 @@ use Geo::SRTM::Lookup;
 
 use constant SCALE => 'ref/scale.png';
 
-use constant LAT_MIN => -90;
-use constant LAT_MAX => 90;
-use constant LON_MIN => -180;
-use constant LON_MAX => 180;
+#use constant LAT_MIN => -90;
+#use constant LAT_MAX => 90;
+#use constant LON_MIN => -180;
+#use constant LON_MAX => 180;
 
 #use constant LAT_MIN => 43;
 #use constant LAT_MAX => 57;
@@ -27,10 +27,10 @@ use constant LON_MAX => 180;
 #use constant LON_MIN => -20;
 #use constant LON_MAX => 20;
 
-#use constant LAT_MIN => 50.5;
-#use constant LAT_MAX => 57.5;
-#use constant LON_MIN => -4.5;
-#use constant LON_MAX => 0.5;
+use constant LAT_MIN => 50.5;
+use constant LAT_MAX => 65.5;
+use constant LON_MIN => -9.5;
+use constant LON_MAX => 2.5;
 
 use constant WIDTH => 1600;
 use constant HEIGHT =>
@@ -93,17 +93,17 @@ for ( my $y = 0; $y < HEIGHT; $y++ ) {
     my $hgt = $hgt[$x][$y];
     if ( defined $hgt ) {
       if ( $hgt == 0 ) {
-        $img->setPixel( $x, HEIGHT - $y, $zero );
+        $img->setPixel( $x, HEIGHT - 1 - $y, $zero );
       }
       else {
         my $sp = int( ( $hgt - $min ) * $sh / ( $max - $min ) );
         my $col = $cc{$sp} ||= $img->colorAllocate(
-          $scale->rgb( $scale->getPixel( $sw / 2, $sh - $sp ) ) );
-        $img->setPixel( $x, HEIGHT - $y, $col );
+          $scale->rgb( $scale->getPixel( $sw / 2, $sh - 1 - $sp ) ) );
+        $img->setPixel( $x, HEIGHT - 1 - $y, $col );
       }
     }
     else {
-      $img->setPixel( $x, HEIGHT - $y, $empty );
+      $img->setPixel( $x, HEIGHT - 1 - $y, $empty );
     }
   }
 }
