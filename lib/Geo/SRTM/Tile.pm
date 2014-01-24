@@ -41,10 +41,16 @@ sub _lookup {
   my ( $self, $lat, $lon ) = @_;
   my $res  = $self->resolution;
   my $size = $self->_size;
-  my $x    = int( ( $lat - int $lat ) * $res );
-  my $y    = int( ( $lon - int $lon ) * $res );
+  my $y    = int( ( $lat - int $lat ) * $res );
+  my $x    = int( ( $lon - int $lon ) * $res );
   my $fh   = $self->_fh;
-  $fh->seek( ( $y * $size + $x ) * 2, 'SEEK_SET' );
+  my $pos  = ( ( $res - $y ) * $size + $x ) * 2;
+  #  printf( "%6.2f %6.2f %5d %5d %10d\n", $lat, $lon, $x, $y, $pos );
+  my $lim = $size * $size * 2;
+  if ( $pos < 0 || $pos >= $lim ) {
+    die "*** x: $x, y: $y, res: $res, size: $size, pos: $pos, lim: $lim\n";
+  }
+  $fh->seek( $pos, 'SEEK_SET' );
   $fh->read( my $data, 2 );
   return unpack 'n', $data;
 }
@@ -53,7 +59,7 @@ sub lookup {
   my ( $self, $lat, $lon ) = @_;
   my $datum = $self->_lookup( $lat, $lon );
   $datum -= 65536 if $datum >= 32768;    # sign extend
-  return if $datum == -32767;            # missing
+  return if $datum <= -32767;            # missing
   return $datum;
 }
 

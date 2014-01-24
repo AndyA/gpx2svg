@@ -26,7 +26,7 @@ my $base = dir $ENV{SRTM_DIR};
   isa_ok $lu, 'Geo::SRTM::Lookup';
 
   my $hgt = $lu->lookup( 51.4625814, -0.1685967 );
-  is $hgt, 69, 'altitude OK';
+  is $hgt, 14, 'altitude OK';
 }
 
 done_testing();

@@ -28,13 +28,13 @@ has _cache => (
 sub _mk_name {
   my ( undef, $lat, $lon ) = @_;
   my $ilat = int( $lat + 90 ) - 90;
-  my $ilon = int( 180 - $lon ) - 180;
+  my $ilon = int( $lon + 180 ) - 180;
   return (
     sprintf( '%s%02d%s%03d',
       ( $ilat < 0 ? 'S' : 'N' ), abs($ilat),
       ( $ilon < 0 ? 'W' : 'E' ), abs($ilon) ),
     $lat - $ilat,
-    $ilon - $lon
+    $lon - $ilon
   );
 }
 
