@@ -12,27 +12,12 @@ use Geo::SRTM::Lookup;
 
 use constant SCALE => 'ref/scale.png';
 
-#use constant LAT_MIN => -90;
-#use constant LAT_MAX => 90;
-#use constant LON_MIN => -180;
-#use constant LON_MAX => 180;
-
-#use constant LAT_MIN => 43;
-#use constant LAT_MAX => 57;
-#use constant LON_MIN => -6;
-#use constant LON_MAX => 10;
-
-#use constant LAT_MIN => -20;
-#use constant LAT_MAX => 20;
-#use constant LON_MIN => -20;
-#use constant LON_MAX => 20;
-
 use constant LAT_MIN => 47.5;
 use constant LAT_MAX => 60.5;
 use constant LON_MIN => -11.5;
 use constant LON_MAX => 2.5;
 
-use constant WIDTH => 1800;
+use constant WIDTH => 2000;
 use constant HEIGHT =>
  int( WIDTH * ( LAT_MAX - LAT_MIN ) / ( LON_MAX - LON_MIN ) );
 
