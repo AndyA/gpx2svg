@@ -1,3 +1,4 @@
 .*.sw?
 /*.svg
+/work
 Session.vim
