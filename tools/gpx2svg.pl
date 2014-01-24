@@ -13,18 +13,21 @@ use Geo::Gpx;
 use Geo::Mercator;
 use Getopt::Long;
 use List::Util qw( min max );
+use Geo::SRTM::Lookup;
 use SVG;
 
 my %O = (
-  trkfile => undef,
-  elefile => undef,
-  tracks  => 1,
-  routes  => 1,
-  size    => '1000x1000',
-  vscale  => 100,
-  border  => 50,
-  eps     => 1,
-  smooth  => 0,
+  trkfile   => undef,
+  elefile   => undef,
+  tracks    => 1,
+  routes    => 1,
+  size      => '1000x1000',
+  vscale    => 100,
+  border    => 50,
+  eps       => 1,
+  smooth    => 0,
+  srtm      => undef,
+  force_dem => 0,
 );
 
 # Potted styles
@@ -56,10 +59,12 @@ my %STYLE = (
 );
 
 GetOptions(
-  't:s'      => \$O{trkfile},
-  'e:s'      => \$O{elefile},
-  'smooth:s' => \$O{smooth},
-  'vscale:i' => \$O{vscale},
+  't:s'       => \$O{trkfile},
+  'e:s'       => \$O{elefile},
+  'srtm:s'    => \$O{srtm},
+  'smooth:s'  => \$O{smooth},
+  'force-dem' => \$O{force_dem},
+  'vscale:i'  => \$O{vscale},
 ) or syntax();
 
 unless ( defined $O{trkfile} || defined $O{elefile} ) {
@@ -87,6 +92,23 @@ for my $fn (@ARGV) {
        };
     }
   }
+}
+
+if ( defined( my $srtm = $O{srtm} ) ) {
+  die "$srtm not found" unless -d $srtm;
+  print "Doing SRTM lookup for elevation data\n";
+  my $lu = Geo::SRTM::Lookup->new( basedir => $srtm );
+  my $done = 0;
+  for my $leg (@pt) {
+    my @pts = flatten($leg);
+    for my $pt (@pts) {
+      if ( $O{force_dem} || !defined $pt->{ele} ) {
+        $pt->{ele} = $lu->lookup( $pt->{lat}, $pt->{lon} ) || 0;
+        $done++;
+      }
+    }
+  }
+  print "Looked up elevation for $done points\n";
 }
 
 if ( defined( my $trkfile = $O{trkfile} ) ) {
