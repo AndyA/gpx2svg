@@ -89,17 +89,21 @@ for my $fn (@ARGV) {
 if ( defined( my $trkfile = $O{trkfile} ) ) {
   print "Drawing track\n";
   my $svg = make_track( \@pt );
-  print "Writing track to $trkfile\n";
-  open my $of, '>', $trkfile;
-  print $of $svg->xmlify;
+  if ($svg) {
+    print "Writing track to $trkfile\n";
+    open my $of, '>', $trkfile;
+    print $of $svg->xmlify;
+  }
 }
 
 if ( defined( my $elefile = $O{elefile} ) ) {
   print "Drawing elevation profile\n";
   my $svg = make_profile( \@pt );
-  print "Writing elevation profile to $elefile\n";
-  open my $of, '>', $elefile;
-  print $of $svg->xmlify;
+  if ($svg) {
+    print "Writing elevation profile to $elefile\n";
+    open my $of, '>', $elefile;
+    print $of $svg->xmlify;
+  }
 }
 
 sub make_track {
@@ -162,15 +166,23 @@ sub make_profile {
     for my $pt (@pts) {
       $dist += $gis->distance( $plat, $plon, $pt->{lat}, $pt->{lon} )->metres
        if defined $plat;
+      ( $plat, $plon ) = ( $pt->{lat}, $pt->{lon} );
+      next unless defined $pt->{ele};
       push @$xv, $dist;
       push @$yv, $sm->( $pt->{ele} * $O{vscale} );
       $maxy = $pt->{ele} if $pt->{ele} > $maxy;
-      ( $plat, $plon ) = ( $pt->{lat}, $pt->{lon} );
     }
-    # close polygon
-    push @$xv, $xv->[-1], $left;
-    push @$yv, 0, 0;
-    push @leg, [$xv, $yv];
+    if (@$xv) {
+      # close polygon
+      push @$xv, $xv->[-1], $left;
+      push @$yv, 0, 0;
+      push @leg, [$xv, $yv];
+    }
+  }
+
+  unless (@leg) {
+    print "No elevation data found!\n";
+    return;
   }
 
   my $width  = $O{width};
@@ -251,8 +263,10 @@ sub make_scaler {
   my ( $ow, $oh, $bbox, $border ) = @_;
   $border ||= 0;
   my ( $minx, $miny, $maxx, $maxy ) = @$bbox;
-  my $iw     = $maxx - $minx;
-  my $ih     = $maxy - $miny;
+  my $iw = $maxx - $minx;
+  my $ih = $maxy - $miny;
+  $iw ||= 1;
+  $ih ||= 1;
   my $scale  = min( ( $ow - $border ) / $iw, ( $oh - $border ) / $ih );
   my $xshift = ( $ow - $iw * $scale ) / 2;
   my $yshift = ( $oh - $ih * $scale ) / 2;
