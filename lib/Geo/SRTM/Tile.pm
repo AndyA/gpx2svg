@@ -12,7 +12,7 @@ Geo::SRTM::Tile - An SRTM tile
 
 has filename   => ( is => 'ro', required => 1 );
 has resolution => ( is => 'ro', writer   => '_set_resolution', );
-has _data      => ( is => 'ro', lazy     => 1, builder => '_load' );
+has _fh        => ( is => 'ro', lazy     => 1, builder => '_open' );
 
 sub file_resolution {
   my ( undef, $filename ) = @_;
@@ -30,15 +30,11 @@ sub BUILD {
 
 sub _size { shift->resolution + 1 }
 
-sub _load {
+sub _open {
   my $self = shift;
   open my $fh, '<', $self->filename;
   $fh->binmode;
-  my $row  = $self->_size;
-  my $size = $row * $row * 2;
-  my $got  = read $fh, my ($data), $size;
-  die "I/O error ($got, $size)" unless $got == $size;
-  return $data;
+  return $fh;
 }
 
 sub _lookup {
@@ -47,7 +43,10 @@ sub _lookup {
   my $size = $self->_size;
   my $x    = int( ( $lat - int $lat ) * $res );
   my $y    = int( ( $lon - int $lon ) * $res );
-  return unpack 'n', substr $self->_data, ( $y * $size + $x ) * 2, 2;
+  my $fh   = $self->_fh;
+  $fh->seek( ( $y * $size + $x ) * 2, 'SEEK_SET' );
+  $fh->read( my $data, 2 );
+  return unpack 'n', $data;
 }
 
 sub lookup {
