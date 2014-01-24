@@ -1,4 +1,5 @@
 .*.sw?
+/*.png
 /*.svg
 /Build
 /MYMETA.*
