@@ -17,17 +17,18 @@ use Geo::SRTM::Lookup;
 use SVG;
 
 my %O = (
-  trkfile   => undef,
-  elefile   => undef,
-  tracks    => 1,
-  routes    => 1,
-  size      => '1000x1000',
-  vscale    => 100,
-  border    => 50,
-  eps       => 1,
-  smooth    => 0,
-  srtm      => undef,
-  force_dem => 0,
+  trkfile    => undef,
+  elefile    => undef,
+  maperitive => undef,
+  tracks     => 1,
+  routes     => 1,
+  size       => '1000x1000',
+  vscale     => 100,
+  border     => 50,
+  eps        => 1,
+  smooth     => 0,
+  srtm       => undef,
+  force_dem  => 0,
 );
 
 # Potted styles
@@ -61,17 +62,22 @@ my %STYLE = (
 GetOptions(
   't:s'       => \$O{trkfile},
   'e:s'       => \$O{elefile},
+  'm:s'       => \$O{maperitive},
   'srtm:s'    => \$O{srtm},
   'smooth:s'  => \$O{smooth},
+  'eps:s'     => \$O{eps},
   'force-dem' => \$O{force_dem},
   'vscale:i'  => \$O{vscale},
 ) or syntax();
 
-unless ( defined $O{trkfile} || defined $O{elefile} ) {
+unless ( defined $O{trkfile}
+  || defined $O{elefile}
+  || defined $O{maperitive} ) {
   print "Please specify one or both of\n",
-   "   -t track.svg     (generate track file)\n",
-   "or -e elevation.svg (generate elevation file)\n";
-  exit 1;
+   "   -t track.svg      (generate track file)\n",
+   "or -e elevation.svg  (generate elevation file)\n",
+   "or -m script.mscript (generate Maperitive script)\n",
+   exit 1;
 }
 
 die "Bad page size\n" unless $O{size} =~ /^(\d+)x(\d+)$/;
@@ -129,6 +135,33 @@ if ( defined( my $elefile = $O{elefile} ) ) {
     open my $of, '>', $elefile;
     print $of $svg->xmlify;
   }
+}
+
+if ( defined( my $maperitive = $O{maperitive} ) ) {
+  my ( $minlat, $minlon, $maxlat, $maxlon ) = bounds( \@pt );
+  open my $of, '>', $maperitive;
+  print $of <<EOT;
+use-ruleset location=Rules/Hiking.mrules
+apply-ruleset
+set-geo-bounds $minlon, $minlat, $maxlon, $maxlat
+download-osm
+export-svg file=base.svg
+EOT
+}
+
+sub bounds {
+  my $pt = shift;
+  my ( $minlat, $minlon, $maxlat, $maxlon );
+  for my $leg (@pt) {
+    my @pts = flatten($leg);
+    for my $pt (@pts) {
+      $minlat = $pt->{lat} unless defined $minlat && $minlat < $pt->{lat};
+      $minlon = $pt->{lon} unless defined $minlon && $minlon < $pt->{lon};
+      $maxlat = $pt->{lat} unless defined $maxlat && $maxlat > $pt->{lat};
+      $maxlon = $pt->{lon} unless defined $maxlon && $maxlon > $pt->{lon};
+    }
+  }
+  return ( $minlat, $minlon, $maxlat, $maxlon );
 }
 
 sub make_track {
