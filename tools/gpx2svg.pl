@@ -215,23 +215,13 @@ sub force_aspect {
   my $width  = $maxx - $minx;
   my $height = $maxy - $miny;
 
-  my ( $nw, $nh ) = ( $width, $height );
+  $ratio = 1 / $ratio if $width > $height;
 
-  if ( $width < $height ) {
-    # portrait
-    $nh = $width * $ratio;
-    if ( $nh < $height ) {
-      $nh = $height;
-      $nw = $height / $ratio;
-    }
-  }
-  else {
-    #landscape
-    $nh = $width / $ratio;
-    if ( $nh < $height ) {
-      $nh = $height;
-      $nw = $height * $ratio;
-    }
+  my $nh = $width * $ratio;
+  my $nw = $width;
+  if ( $nh < $height ) {
+    $nh = $height;
+    $nw = $height / $ratio;
   }
 
   my $dw = $nw - $width;
