@@ -171,7 +171,7 @@ use-ruleset location="$rules"
 apply-ruleset
 set-geo-bounds $minlon, $minlat, $maxlon, $maxlat
 download-osm xapi-url="$xapi"
-export-svg file="$maperitive"
+export-svg file="$maperitive" compatibility=Illustrator
 EOT
 
   system $exe, $scpt;
