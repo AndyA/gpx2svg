@@ -16,9 +16,9 @@ find "$indir" -iname '*.gpx' | xargs -L 1 dirname | sort | uniq | while read dir
   
   [ -e "$track" -a -e "$elevation" -a -e "$base" ] && continue
   opts=""
-  [ -e "$track" ] || opts="$opts -t \"$track\""
-  [ -e "$elevation" ] || opts="$opts -e \"$elevation\""
-  [ -e "$base" ] || opts="$opts -m \"$base\""
+  [ -e "$track" ] || opts="$opts -t $track"
+  [ -e "$elevation" ] || opts="$opts -e $elevation"
+  [ -e "$base" ] || opts="$opts -m $base"
   perl tools/gpx2svg.pl $opts "$dir"/*.gpx
 done
 
