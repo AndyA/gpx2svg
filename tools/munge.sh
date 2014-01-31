@@ -1,7 +1,6 @@
 #!/bin/bash
 
 indir="work/"
-opts="--vscale 80 --srtm /data/ref/srtm/SRTMx"
 
 find "$indir" -iname '*.tcx' | while read tcx; do
   gpx="$( echo "$tcx" | sed -e 's/\.[^.]*$//' ).gpx"
@@ -10,6 +9,7 @@ find "$indir" -iname '*.tcx' | while read tcx; do
 done
 
 find "$indir" -iname '*.gpx' | xargs -L 1 dirname | sort | uniq | while read dir; do
+  opts="--vscale 80 --srtm /data/ref/srtm/SRTMx"
   track="$dir/track.svg"
   base="$dir/base.svg"
   elevation="$dir/elevation.svg"
