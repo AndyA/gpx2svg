@@ -11,10 +11,13 @@ use Data::Dumper;
 use GIS::Distance;
 use Geo::Gpx;
 use Geo::Mercator;
+use Geo::SRTM::Lookup;
 use Getopt::Long;
 use List::Util qw( min max );
-use Geo::SRTM::Lookup;
+use Path::Class;
 use SVG;
+
+use constant MAPERITIVE => 'Maperitive.Console.exe';
 
 my %O = (
   trkfile    => undef,
@@ -29,6 +32,8 @@ my %O = (
   smooth     => 0,
   srtm       => undef,
   force_dem  => 0,
+  mp_home    => "$FindBin::Bin/../Maperitive",
+  mp_rules   => "Rules/Hiking.mrules",
 );
 
 # Potted styles
@@ -76,7 +81,7 @@ unless ( defined $O{trkfile}
   print "Please specify one or both of\n",
    "   -t track.svg      (generate track file)\n",
    "or -e elevation.svg  (generate elevation file)\n",
-   "or -m script.mscript (generate Maperitive script)\n",
+   "or -m base.svg       (generate Maperitive base map)\n",
    exit 1;
 }
 
@@ -138,15 +143,32 @@ if ( defined( my $elefile = $O{elefile} ) ) {
 }
 
 if ( defined( my $maperitive = $O{maperitive} ) ) {
-  my ( $minlat, $minlon, $maxlat, $maxlon ) = bounds( \@pt );
-  open my $of, '>', $maperitive;
+  my ( $minlat, $minlon, $maxlat, $maxlon ) = grow( bounds( \@pt ), 0.1 );
+
+  my $scpt  = "/tmp/maperitive.$$.mscript";
+  my $home  = dir $O{mp_home};
+  my $rules = file $home, $O{mp_rules};
+  my $exe   = file $home, MAPERITIVE;
+  open my $of, '>', $scpt;
+
   print $of <<EOT;
-use-ruleset location=Rules/Hiking.mrules
+use-ruleset location=$rules
 apply-ruleset
 set-geo-bounds $minlon, $minlat, $maxlon, $maxlat
 download-osm
-export-svg file=base.svg
+export-svg file=$maperitive
 EOT
+
+  system $exe, $scpt;
+  unlink $scpt;
+}
+
+sub grow {
+  my ( $minlat, $minlon, $maxlat, $maxlon, $factor ) = @_;
+  my $lats = ( $maxlat - $minlat ) * $factor;
+  my $lons = ( $maxlon - $minlon ) * $factor;
+  return ( $minlat - $lats, $minlon - $lons, $maxlat + $lats,
+    $maxlon + $lons );
 }
 
 sub bounds {
