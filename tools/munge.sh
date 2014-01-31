@@ -22,7 +22,6 @@ find "$indir" -iname '*.gpx' | xargs -L 1 dirname | sort | uniq | while read dir
     [ "$gpx" -nt "$base" ]      && m=true
   done
   
-  opts=""
   $t && opts="$opts -t $track"
   $e && opts="$opts -e $elevation"
   $m && opts="$opts -m $base"
