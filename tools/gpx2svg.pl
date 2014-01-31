@@ -34,7 +34,7 @@ my %O = (
   srtm       => undef,
   force_dem  => 0,
   mp_home    => "$FindBin::Bin/../Maperitive",
-  mp_rules   => "Rules/Hiking.mrules",
+  mp_rules   => "Rules/Default.mrules",
   xapi_url   => "http://overpass.osm.rambler.ru/cgi/xapi_meta?*",
   proxy      => undef,
 );
