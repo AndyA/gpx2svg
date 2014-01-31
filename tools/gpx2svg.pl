@@ -16,6 +16,7 @@ use Getopt::Long;
 use List::Util qw( min max );
 use Path::Class;
 use SVG;
+use URI;
 
 use constant MAPERITIVE => 'Maperitive.Console.exe';
 
@@ -34,6 +35,8 @@ my %O = (
   force_dem  => 0,
   mp_home    => "$FindBin::Bin/../Maperitive",
   mp_rules   => "Rules/Hiking.mrules",
+  xapi_url   => "http://overpass.osm.rambler.ru/cgi/xapi_meta?*",
+  proxy      => undef,
 );
 
 # Potted styles
@@ -70,6 +73,7 @@ GetOptions(
   'm:s'       => \$O{maperitive},
   'srtm:s'    => \$O{srtm},
   'smooth:s'  => \$O{smooth},
+  'proxy:s'   => \$O{proxy},
   'eps:s'     => \$O{eps},
   'force-dem' => \$O{force_dem},
   'vscale:i'  => \$O{vscale},
@@ -149,14 +153,25 @@ if ( defined( my $maperitive = $O{maperitive} ) ) {
   my $home  = dir $O{mp_home};
   my $rules = file $home, $O{mp_rules};
   my $exe   = file $home, MAPERITIVE;
+  my $xapi  = $O{xapi_url};
   open my $of, '>', $scpt;
 
+  if ( defined( my $proxy = $O{proxy} ) ) {
+    my $puri = URI->new($proxy);
+    my ( $host, $port ) = ( $puri->host, $puri->port );
+    print $of <<EOT;
+set-setting name=web.proxy.host value=$host
+set-setting name=web.proxy.port value=$port
+set-setting name=web.proxy.use-proxy value=true
+EOT
+  }
+
   print $of <<EOT;
-use-ruleset location=$rules
+use-ruleset location="$rules"
 apply-ruleset
 set-geo-bounds $minlon, $minlat, $maxlon, $maxlat
-download-osm
-export-svg file=$maperitive
+download-osm xapi-url="$xapi"
+export-svg file="$maperitive" compatibility=Illustrator
 EOT
 
   system $exe, $scpt;
