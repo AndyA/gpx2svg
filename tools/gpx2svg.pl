@@ -147,7 +147,7 @@ if ( defined( my $elefile = $O{elefile} ) ) {
 }
 
 if ( defined( my $maperitive = $O{maperitive} ) ) {
-  my ( $minlat, $minlon, $maxlat, $maxlon ) = grow( bounds( \@pt ), 0.1 );
+  my ( $minlat, $minlon, $maxlat, $maxlon ) = grow( bounds( \@pt ), 0.2 );
 
   my $scpt  = "/tmp/maperitive.$$.mscript";
   my $home  = dir $O{mp_home};
@@ -171,7 +171,7 @@ use-ruleset location="$rules"
 apply-ruleset
 set-geo-bounds $minlon, $minlat, $maxlon, $maxlat
 download-osm xapi-url="$xapi"
-export-svg file="$maperitive" compatibility=Illustrator
+export-svg file="$maperitive"
 EOT
 
   system $exe, $scpt;
