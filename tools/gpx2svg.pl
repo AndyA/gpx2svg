@@ -37,6 +37,7 @@ my %O = (
   mp_rules   => "Rules/Default.mrules",
   xapi_url   => "http://overpass.osm.rambler.ru/cgi/xapi_meta?*",
   proxy      => undef,
+  map_aspect => sqrt(2),
 );
 
 # Potted styles
@@ -149,6 +150,15 @@ if ( defined( my $elefile = $O{elefile} ) ) {
 if ( defined( my $maperitive = $O{maperitive} ) ) {
   my ( $minlat, $minlon, $maxlat, $maxlon ) = grow( bounds( \@pt ), 0.2 );
 
+  if ( defined $O{map_aspect} ) {
+    printf( "Fix aspect: %6.2f, %6.2f, %6.2f, %6.2f -> ",
+      $minlat, $minlon, $maxlat, $maxlon );
+    ( $minlat, $minlon, $maxlat, $maxlon )
+     = force_aspect( $minlat, $minlon, $maxlat, $maxlon, $O{map_aspect} );
+    printf( " %6.2f, %6.2f, %6.2f, %6.2f\n",
+      $minlat, $minlon, $maxlat, $maxlon );
+  }
+
   my $scpt  = "/tmp/maperitive.$$.mscript";
   my $home  = dir $O{mp_home};
   my $rules = file $home, $O{mp_rules};
@@ -174,8 +184,63 @@ download-osm xapi-url="$xapi"
 export-svg file="$maperitive" compatibility=Illustrator
 EOT
 
-  system $exe, $scpt;
+  my ( $width, $height ) = get_size( $minlat, $minlon, $maxlat, $maxlon );
+
+  my ( $vw, $vh )
+   = $width > $height
+   ? ( int( 1000 * $width / $height ), 1000 )
+   : ( 1000, int( 1000 * $height / $width ) );
+
+  print "Maperitive view: $vw, $vh\n";
+
+  system $exe, "-vw=$vw", "-vh=$vh", $scpt;
   unlink $scpt;
+}
+
+sub get_size {
+  my ( $minlat, $minlon, $maxlat, $maxlon ) = @_;
+
+  my ( $minx, $miny ) = mercate( $minlat, $minlon );
+  my ( $maxx, $maxy ) = mercate( $maxlat, $maxlon );
+
+  return ( $maxx - $minx, $maxy - $miny );
+}
+
+sub force_aspect {
+  my ( $minlat, $minlon, $maxlat, $maxlon, $ratio ) = @_;
+
+  my ( $minx, $miny ) = mercate( $minlat, $minlon );
+  my ( $maxx, $maxy ) = mercate( $maxlat, $maxlon );
+
+  my $width  = $maxx - $minx;
+  my $height = $maxy - $miny;
+
+  my ( $nw, $nh ) = ( $width, $height );
+
+  if ( $width < $height ) {
+    # portrait
+    $nh = $width * $ratio;
+    if ( $nh < $height ) {
+      $nh = $height;
+      $nw = $height / $ratio;
+    }
+  }
+  else {
+    #landscape
+    $nh = $width / $ratio;
+    if ( $nh < $height ) {
+      $nh = $height;
+      $nw = $height * $ratio;
+    }
+  }
+
+  my $dw = $nw - $width;
+  my $dh = $nh - $height;
+
+  return (
+    demercate( $minx - $dw / 2, $miny - $dh / 2 ),
+    demercate( $maxx + $dw / 2, $maxy + $dh / 2 )
+  );
 }
 
 sub grow {
