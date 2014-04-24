@@ -13,6 +13,7 @@ find "$indir" -iname '*.gpx' | xargs -L 1 dirname | sort | uniq | while read dir
   track="$dir/track.svg"
   base="$dir/base.svg"
   elevation="$dir/elevation.svg"
+  fine="$dir/elefine.svg"
 
   t=false; e=false; m=false
 
@@ -20,13 +21,20 @@ find "$indir" -iname '*.gpx' | xargs -L 1 dirname | sort | uniq | while read dir
     [ "$gpx" -nt "$track" ]     && t=true
     [ "$gpx" -nt "$elevation" ] && e=true
     [ "$gpx" -nt "$base" ]      && m=true
+    [ "$gpx" -nt "$fine" ]      && f=true
   done
   
+  if $f; then
+    set -x
+    perl tools/gpx2svg.pl --eps 0.1 $opts -e $fine "$dir"/*.gpx
+    set +x
+  fi
+
+  $t || $e || $m || continue
+
   $t && opts="$opts -t $track"
   $e && opts="$opts -e $elevation"
   $m && opts="$opts -m $base"
-
-  $t || $e || $m || continue
 
   set -x
   perl tools/gpx2svg.pl $opts "$dir"/*.gpx
