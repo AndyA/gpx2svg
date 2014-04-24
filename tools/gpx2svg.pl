@@ -83,7 +83,7 @@ GetOptions(
 unless ( defined $O{trkfile}
   || defined $O{elefile}
   || defined $O{maperitive} ) {
-  print "Please specify one or both of\n",
+  print "Please specify one or more of\n",
    "   -t track.svg      (generate track file)\n",
    "or -e elevation.svg  (generate elevation file)\n",
    "or -m base.svg       (generate Maperitive base map)\n",
