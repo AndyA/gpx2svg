@@ -15,7 +15,7 @@ find "$indir" -iname '*.gpx' | xargs -L 1 dirname | sort | uniq | while read dir
   elevation="$dir/elevation.svg"
   fine="$dir/elefine.svg"
 
-  t=false; e=false; m=false
+  t=false; e=false; m=false; f=false
 
   for gpx in "$dir/"*.gpx; do
     [ "$gpx" -nt "$track" ]     && t=true
