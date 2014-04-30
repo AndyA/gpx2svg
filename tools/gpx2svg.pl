@@ -19,6 +19,7 @@ use SVG;
 use URI;
 
 use constant MAPERITIVE => 'Maperitive.Console.exe';
+use constant RULES      => 'Default.mrules';
 
 my %O = (
   trkfile    => undef,
@@ -34,7 +35,7 @@ my %O = (
   srtm       => undef,
   force_dem  => 0,
   mp_home    => "$FindBin::Bin/../Maperitive",
-  mp_rules   => "Rules/Default.mrules",
+  mp_rules   => "work/Rules/Default.mrules",
   xapi_url   => "http://overpass.osm.rambler.ru/cgi/xapi_meta?*",
   proxy      => undef,
   map_aspect => sqrt(2),
@@ -161,7 +162,7 @@ if ( defined( my $maperitive = $O{maperitive} ) ) {
 
   my $scpt  = "/tmp/maperitive.$$.mscript";
   my $home  = dir $O{mp_home};
-  my $rules = file $home, $O{mp_rules};
+  my $rules = find_rules($maperitive);
   my $exe   = file $home, MAPERITIVE;
   my $xapi  = $O{xapi_url};
   open my $of, '>', $scpt;
@@ -195,6 +196,17 @@ EOT
 
   system $exe, "-vw=$vw", "-vh=$vh", $scpt;
   unlink $scpt;
+}
+
+sub find_rules {
+  my $file = file shift;
+  my $dir  = $file->parent;
+  my @p    = ( file( $dir, RULES ), file $O{mp_rules} );
+  for my $rules (@p) {
+    print "Looking for $rules\n";
+    return $rules->absolute if -e $rules;
+  }
+  die "No rules found";
 }
 
 sub get_size {
