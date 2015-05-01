@@ -9,7 +9,7 @@ find "$indir" -iname '*.tcx' | while read tcx; do
 done
 
 find "$indir" -iname '*.gpx' | xargs -L 1 dirname | sort | uniq | while read dir; do
-  opts="--vscale 80 --srtm /data/ref/srtm/SRTMx"
+  opts="--vscale 80 --srtm /nfs/data/ref/srtm/SRTMx"
   track="$dir/track.svg"
   base="$dir/base.svg"
   elevation="$dir/elevation.svg"
